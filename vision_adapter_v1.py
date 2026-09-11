@@ -33,9 +33,14 @@ breeding-card generator.
 LOCKED RULES
 - Ignore tribe and owner text entirely.
 - Determine screenshot layout: "hud" or "cryopod".
-- Species rule: check the displayed creature name first, then verify against
-  the creature icon/visual. If they conflict, the visual species wins.
-- A custom creature name is not a species.
+- Species identification is a required visual-classification task whenever a creature body or creature icon is visible.
+- First read the displayed creature-name/title line. Do NOT use tribe, owner, player, imprinter, or nearby-world text as displayed_name.
+- Then independently identify the species from the creature body shape and/or creature portrait/icon.
+- Compare the name-derived species with the visual species. If they conflict, the VISUAL species wins.
+- A custom creature name is not a species. A custom name must never prevent visual species identification.
+- If the name/title is ambiguous or appears renamed, still classify visual_species from morphology/icon.
+- Use null for displayed_name rather than copying tribe/owner text.
+- Example of the rule: a renamed creature can have a custom title while its body/icon clearly identifies Rock Drake; return visual_species="Rock Drake" and keep the custom title only as displayed_name.
 - Sex must be "female" or "male" if visibly known, otherwise null.
 - Preserve every explicit zero. Zero is a real observed value.
 - Never replace unreadable/missing information with zero.
@@ -131,6 +136,36 @@ EXTRACTION_SCHEMA: Dict[str, Any] = {
         },
     },
 }
+
+
+SPECIES_RETRY_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["displayed_name", "visual_species", "reason"],
+    "properties": {
+        "displayed_name": {"type": ["string", "null"]},
+        "visual_species": {"type": ["string", "null"]},
+        "reason": {"type": "string"},
+    },
+}
+
+SPECIES_RETRY_INSTRUCTIONS = """
+Re-examine this ARK: Survival Ascended screenshot for SPECIES IDENTIFICATION ONLY.
+
+Do not extract stats or colors. Focus on the creature body silhouette, head, limbs,
+wing/feather/scale structure, tail, and any creature portrait/icon in the HUD.
+
+Rules:
+- Ignore tribe, owner, player, imprinter, and world text completely.
+- displayed_name is only the creature name/title line. If that line cannot be
+  distinguished from tribe/owner text, return displayed_name=null.
+- visual_species must be the biological ARK species identified from the creature
+  body or creature icon, not a custom creature name.
+- Renamed creatures are common. A custom name does not make species unknown.
+- If text and visual conflict, visual wins.
+- Choose from the supplied known ASA species list when a confident visual match exists.
+- Return null only when the creature/icon truly cannot be visually classified.
+"""
 
 
 class VisionProvider(Protocol):
@@ -386,20 +421,55 @@ class VisionAdapter:
     provider: VisionProvider
     valid_species_names: Optional[Iterable[str]] = None
 
+    def _species_context(self) -> str:
+        names = list(self.valid_species_names or [])
+        if not names:
+            return ""
+        return "\n\nKNOWN ASA SPECIES (use as a closed-set reference when visually appropriate):\n" + " | ".join(names)
+
     def extract(self, image_bytes: bytes, mime_type: str = "image/png") -> Dict[str, Any]:
+        species_context = self._species_context()
         raw = self.provider.infer(
             image_bytes=image_bytes,
             mime_type=mime_type,
-            instructions=VISION_INSTRUCTIONS,
+            instructions=VISION_INSTRUCTIONS + species_context,
             schema=EXTRACTION_SCHEMA,
         )
         record = normalize_extraction(raw, self.valid_species_names)
+
+        # If the general extraction could not resolve species, perform one focused
+        # visual-classification retry. This is intentionally narrow: it does not
+        # overwrite stats, colors, sex, or level from the first extraction.
+        species_retry = None
+        if record.get("species") is None:
+            species_retry = self.provider.infer(
+                image_bytes=image_bytes,
+                mime_type=mime_type,
+                instructions=SPECIES_RETRY_INSTRUCTIONS + species_context,
+                schema=SPECIES_RETRY_SCHEMA,
+            )
+            retry_visual = (species_retry or {}).get("visual_species")
+            retry_displayed = (species_retry or {}).get("displayed_name")
+            if retry_visual:
+                raw["visual_species"] = retry_visual
+                # Correct a likely tribe/owner misread only when the focused pass
+                # can identify the actual creature-title line.
+                if retry_displayed:
+                    raw["displayed_name"] = retry_displayed
+                raw.setdefault("confidence_notes", []).append(
+                    "Species resolved by focused visual retry: " + str((species_retry or {}).get("reason") or "visual classification")
+                )
+                record = normalize_extraction(raw, self.valid_species_names)
+
         validation = validate_record(record)
-        return {
+        result = {
             "record": record,
             "validation": validation,
             "raw_extraction": raw,
         }
+        if species_retry is not None:
+            result["species_retry"] = species_retry
+        return result
 
 
 class FixtureVisionProvider:

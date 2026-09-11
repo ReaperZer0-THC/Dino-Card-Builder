@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from vision_adapter_v1 import FixtureVisionProvider, VisionAdapter, validate_record
-from species_service import render_creature_png, region_metadata
+from species_service import render_creature_png, region_metadata, species_names
 from card_renderer import render_card_png
 
 HERE = Path(__file__).resolve().parent
@@ -26,9 +26,9 @@ else:
     fixtures = json.loads((HERE / "validated_fixture_extractions.json").read_text())
     provider = FixtureVisionProvider(fixtures)
 
-adapter = VisionAdapter(provider)
+adapter = VisionAdapter(provider, valid_species_names=species_names())
 
-app = FastAPI(title="THC Dino Card Builder", version="6.0")
+app = FastAPI(title="THC Dino Card Builder", version="6.1")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -39,7 +39,7 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health():
-    return {"ok":True,"provider":provider_name,"model":getattr(provider,"model",None),"version":"6.0"}
+    return {"ok":True,"provider":provider_name,"model":getattr(provider,"model",None),"version":"6.1"}
 
 @app.post("/api/extract")
 async def extract(file: UploadFile = File(...)):

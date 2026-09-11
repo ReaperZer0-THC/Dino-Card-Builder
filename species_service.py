@@ -21,6 +21,10 @@ engine = SpeciesIntelligence(
     str(HERE / "ARKStatsExtractor-0.73.1.1.zip"),
 )
 
+def species_names():
+    """Canonical ASA species names available to the renderer/classifier."""
+    return list(engine._canonical_names)
+
 def canonical_species(name: str) -> str:
     return ALIASES.get((name or "").strip().lower(), name)
 
