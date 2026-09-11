@@ -106,7 +106,25 @@ EXTRACTION_SCHEMA: Dict[str, Any] = {
                 } for i in REGIONS
             },
         },
-        "cryopod_display_values": {"type": "object"},
+        "cryopod_display_values": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": [
+                "health", "stamina", "weight", "melee", "oxygen",
+                "food", "movement", "imprint", "torpor"
+            ],
+            "properties": {
+                "health": {"type": ["string", "null"]},
+                "stamina": {"type": ["string", "null"]},
+                "weight": {"type": ["string", "null"]},
+                "melee": {"type": ["string", "null"]},
+                "oxygen": {"type": ["string", "null"]},
+                "food": {"type": ["string", "null"]},
+                "movement": {"type": ["string", "null"]},
+                "imprint": {"type": ["string", "null"]},
+                "torpor": {"type": ["string", "null"]},
+            },
+        },
         "confidence_notes": {
             "type": "array",
             "items": {"type": "string"}
