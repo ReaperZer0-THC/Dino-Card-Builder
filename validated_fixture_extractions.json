@@ -1,0 +1,377 @@
+{
+  "fada5d0a85dd1cb94bad1a20f04cc3b647e8a65c57c22ced5d3dd426acdbec8c": {
+    "panel_type": "hud",
+    "displayed_name": "Autumn Drakeling",
+    "visual_species": "Autumn Drakeling",
+    "sex": "female",
+    "shown_level": 450,
+    "stats": {
+      "health": {
+        "wild": 53,
+        "mutations": 40,
+        "added": 0,
+        "applicable": true
+      },
+      "stamina": {
+        "wild": 49,
+        "mutations": 36,
+        "added": 0,
+        "applicable": true
+      },
+      "oxygen": {
+        "wild": 51,
+        "mutations": 36,
+        "added": 0,
+        "applicable": true
+      },
+      "food": {
+        "wild": 48,
+        "mutations": 0,
+        "added": 0,
+        "applicable": true
+      },
+      "weight": {
+        "wild": 56,
+        "mutations": 40,
+        "added": 0,
+        "applicable": true
+      },
+      "melee": {
+        "wild": 40,
+        "mutations": 0,
+        "added": 0,
+        "applicable": true
+      }
+    },
+    "colors": {
+      "0": {
+        "color_id": 79,
+        "confidence": "high"
+      },
+      "1": {
+        "color_id": 79,
+        "confidence": "high"
+      },
+      "2": {
+        "color_id": 79,
+        "confidence": "high"
+      },
+      "3": {
+        "color_id": 1,
+        "confidence": "high"
+      },
+      "4": {
+        "color_id": 1,
+        "confidence": "high"
+      },
+      "5": {
+        "color_id": 79,
+        "confidence": "high"
+      }
+    },
+    "cryopod_display_values": {},
+    "confidence_notes": [
+      "Validated development fixture."
+    ]
+  },
+  "1dd1cd65a94f598083acc5f35cd237d5863c9ee60bbfc7bd996609bdf078530a": {
+    "panel_type": "hud",
+    "displayed_name": "Maeguana",
+    "visual_species": "Maeguana",
+    "sex": "female",
+    "shown_level": 362,
+    "stats": {
+      "health": {
+        "wild": 41,
+        "mutations": 0,
+        "added": 0,
+        "applicable": true
+      },
+      "stamina": {
+        "wild": 40,
+        "mutations": 0,
+        "added": 0,
+        "applicable": true
+      },
+      "oxygen": {
+        "wild": 30,
+        "mutations": 0,
+        "added": 0,
+        "applicable": true
+      },
+      "food": {
+        "wild": 60,
+        "mutations": 70,
+        "added": 0,
+        "applicable": true
+      },
+      "weight": {
+        "wild": 64,
+        "mutations": 56,
+        "added": 0,
+        "applicable": true
+      },
+      "melee": {
+        "wild": null,
+        "mutations": null,
+        "added": null,
+        "applicable": false
+      }
+    },
+    "colors": {
+      "0": {
+        "color_id": 36,
+        "confidence": "high"
+      },
+      "1": {
+        "color_id": 36,
+        "confidence": "high"
+      },
+      "2": {
+        "color_id": 36,
+        "confidence": "high"
+      },
+      "3": {
+        "color_id": 36,
+        "confidence": "high"
+      },
+      "4": {
+        "color_id": 36,
+        "confidence": "high"
+      },
+      "5": {
+        "color_id": 6,
+        "confidence": "high"
+      }
+    },
+    "cryopod_display_values": {},
+    "confidence_notes": [
+      "Validated development fixture."
+    ]
+  },
+  "0a7a031b89a38877b194efeb4379bf2288527c66c2c2c17edfc761cceadba2ce": {
+    "panel_type": "hud",
+    "displayed_name": "12k Hp 1334 Dmg",
+    "visual_species": "Rock Drake",
+    "sex": "male",
+    "shown_level": 364,
+    "stats": {
+      "health": {
+        "wild": 52,
+        "mutations": 20,
+        "added": 0,
+        "applicable": true
+      },
+      "stamina": {
+        "wild": 49,
+        "mutations": 0,
+        "added": 0,
+        "applicable": true
+      },
+      "oxygen": {
+        "wild": 54,
+        "mutations": 158,
+        "added": 0,
+        "applicable": true
+      },
+      "food": {
+        "wild": 30,
+        "mutations": 0,
+        "added": 0,
+        "applicable": true
+      },
+      "weight": {
+        "wild": 0,
+        "mutations": 0,
+        "added": 0,
+        "applicable": true
+      },
+      "melee": {
+        "wild": 0,
+        "mutations": 0,
+        "added": 0,
+        "applicable": true
+      }
+    },
+    "colors": {
+      "0": {
+        "color_id": 5,
+        "confidence": "high"
+      },
+      "1": {
+        "color_id": 5,
+        "confidence": "high"
+      },
+      "2": {
+        "color_id": 5,
+        "confidence": "high"
+      },
+      "3": {
+        "color_id": 5,
+        "confidence": "high"
+      },
+      "4": {
+        "color_id": 5,
+        "confidence": "high"
+      },
+      "5": {
+        "color_id": 5,
+        "confidence": "high"
+      }
+    },
+    "cryopod_display_values": {},
+    "confidence_notes": [
+      "Validated development fixture."
+    ]
+  },
+  "57905f6aea73bc579391e86d731ff5bc45f91ad48b5db60af4debc2481c4f9df": {
+    "panel_type": "hud",
+    "displayed_name": "Pyromane",
+    "visual_species": "Pyromane",
+    "sex": "female",
+    "shown_level": 362,
+    "stats": {
+      "health": {
+        "wild": 54,
+        "mutations": 88,
+        "added": 0,
+        "applicable": true
+      },
+      "stamina": {
+        "wild": 0,
+        "mutations": 0,
+        "added": 0,
+        "applicable": true
+      },
+      "oxygen": {
+        "wild": 59,
+        "mutations": 160,
+        "added": 0,
+        "applicable": true
+      },
+      "food": {
+        "wild": 0,
+        "mutations": 0,
+        "added": 0,
+        "applicable": true
+      },
+      "weight": {
+        "wild": 0,
+        "mutations": 0,
+        "added": 0,
+        "applicable": true
+      },
+      "melee": {
+        "wild": 0,
+        "mutations": 0,
+        "added": 0,
+        "applicable": true
+      }
+    },
+    "colors": {
+      "0": {
+        "color_id": 79,
+        "confidence": "high"
+      },
+      "1": {
+        "color_id": 79,
+        "confidence": "high"
+      },
+      "2": {
+        "color_id": 202,
+        "confidence": "high"
+      },
+      "3": {
+        "color_id": 202,
+        "confidence": "high"
+      },
+      "4": {
+        "color_id": 202,
+        "confidence": "high"
+      },
+      "5": {
+        "color_id": 202,
+        "confidence": "high"
+      }
+    },
+    "cryopod_display_values": {},
+    "confidence_notes": [
+      "Validated development fixture."
+    ]
+  },
+  "9fa76addeefea935f10ccc2021ecb68afcbc6c9dde2bf0b01a8251980d75e875": {
+    "panel_type": "cryopod",
+    "displayed_name": "Rhyniognatha",
+    "visual_species": "Rhyniognatha",
+    "sex": "male",
+    "shown_level": 191,
+    "stats": {
+      "health": {
+        "wild": null,
+        "mutations": null,
+        "added": null,
+        "applicable": true
+      },
+      "stamina": {
+        "wild": null,
+        "mutations": null,
+        "added": null,
+        "applicable": true
+      },
+      "oxygen": {
+        "wild": null,
+        "mutations": null,
+        "added": null,
+        "applicable": true
+      },
+      "food": {
+        "wild": null,
+        "mutations": null,
+        "added": null,
+        "applicable": true
+      },
+      "weight": {
+        "wild": null,
+        "mutations": null,
+        "added": null,
+        "applicable": true
+      },
+      "melee": {
+        "wild": null,
+        "mutations": null,
+        "added": null,
+        "applicable": true
+      }
+    },
+    "colors": {
+      "0": {
+        "color_id": 30,
+        "confidence": "high"
+      },
+      "1": {
+        "color_id": 28,
+        "confidence": "high"
+      },
+      "2": {
+        "color_id": 0,
+        "confidence": "high"
+      },
+      "3": {
+        "color_id": 56,
+        "confidence": "high"
+      },
+      "4": {
+        "color_id": 5,
+        "confidence": "high"
+      },
+      "5": {
+        "color_id": 94,
+        "confidence": "high"
+      }
+    },
+    "cryopod_display_values": {},
+    "confidence_notes": [
+      "Validated development fixture."
+    ]
+  }
+}

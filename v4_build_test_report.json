@@ -1,0 +1,43 @@
+{
+  "python_syntax": "PASS",
+  "web_app_exists": true,
+  "fixture_contract_tests": [
+    {
+      "species": "Autumn Drakeling",
+      "panel_type": "hud",
+      "status": "PASS",
+      "genetic_level": 450,
+      "card_generation_allowed": true
+    },
+    {
+      "species": "Maeguana",
+      "panel_type": "hud",
+      "status": "PASS",
+      "genetic_level": 362,
+      "card_generation_allowed": true
+    },
+    {
+      "species": "Rock Drake",
+      "panel_type": "hud",
+      "status": "PASS",
+      "genetic_level": 364,
+      "card_generation_allowed": true
+    },
+    {
+      "species": "Pyromane",
+      "panel_type": "hud",
+      "status": "PASS",
+      "genetic_level": 362,
+      "card_generation_allowed": true
+    },
+    {
+      "species": "Rhyniognatha",
+      "panel_type": "cryopod",
+      "status": "REVIEW",
+      "genetic_level": null,
+      "card_generation_allowed": false
+    }
+  ],
+  "production_provider": "OpenAI Responses API image input + strict JSON schema",
+  "server_key_policy": "OPENAI_API_KEY server-side only"
+}

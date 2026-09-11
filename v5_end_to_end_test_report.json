@@ -1,0 +1,51 @@
+{
+  "version": "5.0",
+  "pipeline": "Screenshot -> Vision -> Dino Record -> Validation -> Species Intelligence -> THC Card PNG",
+  "fixture_results": [
+    {
+      "species": "Autumn Drakeling",
+      "panel_type": "hud",
+      "validation": "PASS",
+      "genetic_level": 450,
+      "card": "PASS"
+    },
+    {
+      "species": "Maeguana",
+      "panel_type": "hud",
+      "validation": "PASS",
+      "genetic_level": 362,
+      "card": "PASS"
+    },
+    {
+      "species": "Rock Drake",
+      "panel_type": "hud",
+      "validation": "PASS",
+      "genetic_level": 364,
+      "card": "PASS"
+    },
+    {
+      "species": "Pyromane",
+      "panel_type": "hud",
+      "validation": "PASS",
+      "genetic_level": 362,
+      "card": "PASS"
+    },
+    {
+      "species": "Rhyniognatha",
+      "panel_type": "cryopod",
+      "validation": "REVIEW",
+      "genetic_level": null,
+      "card": "BLOCKED_AS_EXPECTED"
+    }
+  ],
+  "locked_behaviors": {
+    "explicit_zero_preserved": true,
+    "unknown_never_becomes_zero": true,
+    "all_six_regions_retained": true,
+    "hidden_regions_labeled": true,
+    "movement_excluded": true,
+    "torpor_excluded": true,
+    "oxygen_included": true,
+    "cryopod_card_blocked_until_completed": true
+  }
+}

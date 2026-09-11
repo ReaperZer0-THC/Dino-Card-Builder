@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>THC Dino Card Builder V5</title>
+<style>
+:root{--bg:#07100a;--panel:#111a14;--panel2:#0a120d;--line:#2d3d31;--gold:#d6b45f;--text:#eef2ed;--muted:#9da99f;--good:#83dda1;--warn:#efcf77;--bad:#ef8d84}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#07100a,#111812);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+header{padding:16px 22px;border-bottom:1px solid var(--line);background:#09110c}.brand{font-weight:900;color:var(--gold);letter-spacing:.08em}.sub{font-size:12px;color:var(--muted);margin-top:3px}
+main{max-width:1500px;margin:auto;padding:16px}.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}.step{padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:12px}.step b{color:var(--gold)}
+.grid{display:grid;grid-template-columns:.95fr 1.05fr;gap:14px}.panel{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}.panel h2{margin:0;padding:12px 14px;border-bottom:1px solid var(--line);color:var(--gold);font-size:13px;text-transform:uppercase;letter-spacing:.06em}.body{padding:14px}
+.drop{border:1px dashed #4b6250;border-radius:9px;padding:15px;background:var(--panel2)}.drop input{display:block;margin-top:8px}.shot{height:400px;margin-top:10px;background:#020503;border:1px solid #202c23;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden}.shot img{max-width:100%;max-height:100%;object-fit:contain}
+.creature{height:250px;background:#07100a;border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-top:10px}.creature img{max-width:100%;max-height:100%;object-fit:contain}
+.meta{display:grid;grid-template-columns:2fr 1fr 1fr;gap:7px}.field label{display:block;font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}.field input,.field select{width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:#08100b;color:var(--text)}
+.stathead,.stat{display:grid;grid-template-columns:1.35fr repeat(3,.75fr);gap:6px;align-items:center}.stathead{font-size:10px;text-transform:uppercase;color:var(--muted);margin-top:12px}.stat{padding:5px 0;border-top:1px solid #202b24}.stat input{width:100%;padding:7px;border:1px solid var(--line);border-radius:5px;background:#08100b;color:var(--text);text-align:center}.stat b{font-size:13px}.na{opacity:.55}
+.colors{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}.color{border:1px solid var(--line);border-radius:7px;padding:7px;background:#0a120d}.color input{width:100%;margin-top:4px;padding:6px;border:1px solid var(--line);border-radius:5px;background:#08100b;color:var(--text)}
+.status{padding:10px;border-radius:8px;margin-top:10px;border:1px solid var(--line);font-size:12px;line-height:1.5}.pass{background:#102118;border-color:#315f40}.review{background:#251f10;border-color:#665526}.error{background:#261412;border-color:#6c3831}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}button{padding:10px 12px;border:1px solid var(--line);border-radius:7px;background:#17231a;color:var(--text);font-weight:700;cursor:pointer}.primary{background:var(--gold);border-color:var(--gold);color:#111}button:disabled{opacity:.35;cursor:not-allowed}
+.loader{display:none;color:var(--gold);margin-top:9px}.muted{color:var(--muted);font-size:11px}.unknown{border-color:#9a7631!important;background:#231c0e!important}
+pre{white-space:pre-wrap;font-size:11px;background:#070d09;padding:10px;border-radius:7px;border:1px solid var(--line);max-height:220px;overflow:auto}
+#cardModal{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;z-index:20;padding:20px}.modalBox{width:min(1260px,98vw);max-height:96vh;overflow:auto;background:#07100a;border:1px solid var(--gold);border-radius:12px;padding:12px}.modalTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.modalBox img{width:100%;height:auto;border-radius:8px;display:block}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.steps{grid-template-columns:1fr 1fr}.shot{height:330px}}
+</style>
+</head>
+<body>
+<header><div class="brand">THE HIGH COUNCIL · DINO CARD BUILDER V5</div><div class="sub">Screenshot → Vision → Review → Species Render → Finished Card</div></header>
+<main>
+<div class="steps">
+<div class="step"><b>1.</b> Upload</div><div class="step"><b>2.</b> Extract</div><div class="step"><b>3.</b> Review</div><div class="step"><b>4.</b> Render</div><div class="step"><b>5.</b> Card</div>
+</div>
+<div class="grid">
+<section class="panel"><h2>Screenshot & Species Preview</h2><div class="body">
+<div class="drop"><b>Upload an ASA Xbox screenshot</b><input id="file" type="file" accept="image/*"><div class="muted">HUD screenshots can complete a card directly. Cryopods remain partial until breeding points are supplied.</div></div>
+<div id="loader" class="loader">Analyzing screenshot…</div>
+<div class="shot"><img id="preview"></div>
+<div id="apiStatus"></div>
+<div class="creature"><img id="creaturePreview"><span id="creaturePlaceholder" class="muted">Rendered species preview appears here.</span></div>
+</div></section>
+
+<section class="panel"><h2>Dino Record</h2><div class="body">
+<div class="meta">
+<div class="field"><label>Species</label><input id="species"></div>
+<div class="field"><label>Sex</label><select id="sex"><option value="">Unknown</option><option value="female">Female</option><option value="male">Male</option></select></div>
+<div class="field"><label>Shown Level</label><input id="level" type="number"></div>
+</div>
+<div class="field" style="margin-top:7px"><label>Displayed Name</label><input id="displayedName"></div>
+<div class="stathead"><span>Breeding Stat</span><span>Wild</span><span>Mut</span><span>Added</span></div>
+<div id="stats"></div>
+<div class="colors" id="colors"></div>
+<div id="validation" class="status review">Upload a screenshot to begin.</div>
+<div class="actions">
+<button id="refreshCreature" disabled>Refresh Species Render</button>
+<button id="copy" disabled>Copy Record</button>
+<button id="downloadRecord" disabled>Record JSON</button>
+<button id="generateCard" class="primary" disabled>Generate Dino Card</button>
+</div>
+<div id="notes" style="margin-top:10px"></div>
+</div></section>
+</div>
+</main>
+
+<div id="cardModal"><div class="modalBox">
+<div class="modalTop"><b style="color:var(--gold)">FINISHED THC DINO CARD</b><div><button id="downloadCard">Download PNG</button> <button id="closeModal">Close</button></div></div>
+<img id="cardImage">
+</div></div>
+
+<script>
+const STATS=["health","stamina","oxygen","food","weight","melee"];
+let record=null, currentCardUrl=null, creatureUrl=null;
+const $=x=>document.getElementById(x), cap=s=>s[0].toUpperCase()+s.slice(1);
+
+function blankRow(){return {wild:null,mutations:null,added:null,applicable:true}}
+function setupEditors(){
+ $("stats").innerHTML=STATS.map(s=>`<div class="stat" id="row-${s}"><b>${cap(s)}</b><input data-s="${s}" data-k="wild" type="number"><input data-s="${s}" data-k="mutations" type="number"><input data-s="${s}" data-k="added" type="number"></div>`).join("");
+ $("colors").innerHTML=[0,1,2,3,4,5].map(i=>`<div class="color"><small>Region ${i}</small><input data-region="${i}" type="number" min="0" placeholder="Color ID"></div>`).join("");
+ document.querySelectorAll("input,select").forEach(el=>{if(el.id!=="file")el.addEventListener("input",syncAndValidate)});
+}
+function fill(rec){
+ record=JSON.parse(JSON.stringify(rec));
+ $("species").value=record.species||"";$("sex").value=record.sex||"";$("level").value=record.shown_level??"";$("displayedName").value=record.displayed_name||"";
+ STATS.forEach(s=>{const r=record.stats?.[s]||blankRow();const row=$("row-"+s);row.classList.toggle("na",r.applicable===false);["wild","mutations","added"].forEach(k=>{const e=document.querySelector(`[data-s="${s}"][data-k="${k}"]`);e.disabled=r.applicable===false;e.value=r[k]??""})});
+ [0,1,2,3,4,5].forEach(i=>document.querySelector(`[data-region="${i}"]`).value=record.colors?.[String(i)]?.color_id??"");
+ syncAndValidate(); refreshCreature();
+}
+function valueNum(el){return el.value===""?null:Number(el.value)}
+function syncAndValidate(){
+ if(!record)return;
+ record.species=$("species").value.trim()||null;record.sex=$("sex").value||null;record.shown_level=valueNum($("level"));record.displayed_name=$("displayedName").value.trim()||null;
+ let issues=[],calc=1,calcReady=true;
+ STATS.forEach(s=>{record.stats[s]=record.stats[s]||blankRow();const r=record.stats[s];if(r.applicable===false)return;["wild","mutations","added"].forEach(k=>{const e=document.querySelector(`[data-s="${s}"][data-k="${k}"]`);r[k]=valueNum(e);e.classList.toggle("unknown",r[k]===null);if(r[k]===null)issues.push(`${cap(s)} ${k} missing`) });if(Number.isInteger(r.wild)&&Number.isInteger(r.mutations))calc+=r.wild+r.mutations;else calcReady=false});
+ [0,1,2,3,4,5].forEach(i=>{const e=document.querySelector(`[data-region="${i}"]`);const v=valueNum(e);record.colors[String(i)]=record.colors[String(i)]||{};record.colors[String(i)].color_id=v;e.classList.toggle("unknown",v===null);if(v===null)issues.push(`Region ${i} missing`)});
+ if(!record.species)issues.push("Species unresolved");if(!record.sex)issues.push("Sex unresolved");
+ if(calcReady&&Number.isInteger(record.shown_level)&&calc!==record.shown_level)issues.unshift(`Genetic Level mismatch: calculated ${calc}, shown ${record.shown_level}`);
+ if(record.panel_type==="cryopod")issues.push("Cryopod import requires breeding-point completion before card generation.");
+ $("validation").className="status "+(issues.length?"review":"pass");$("validation").innerHTML=issues.length?`<b>⚠ REVIEW</b><br>${issues.join("<br>")}`:`<b>✓ PASS</b><br>Calculated Genetic Lvl ${calc}`;
+ $("copy").disabled=!record;$("downloadRecord").disabled=!record;$("refreshCreature").disabled=!record?.species;$("generateCard").disabled=issues.length>0;
+}
+async function refreshCreature(){
+ if(!record?.species)return;
+ if(creatureUrl){URL.revokeObjectURL(creatureUrl);creatureUrl=null}
+ $("creaturePlaceholder").textContent="Rendering species colors…";$("creaturePreview").removeAttribute("src");
+ try{
+  const res=await fetch("/api/creature",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(record)});
+  if(!res.ok){const e=await res.json();throw new Error(e.detail||e.error)}
+  const blob=await res.blob();creatureUrl=URL.createObjectURL(blob);$("creaturePreview").src=creatureUrl;$("creaturePlaceholder").style.display="none";
+ }catch(err){$("creaturePlaceholder").style.display="inline";$("creaturePlaceholder").textContent="Species render unavailable: "+err.message}
+}
+$("file").onchange=async e=>{
+ const f=e.target.files[0];if(!f)return;
+ const rd=new FileReader();rd.onload=x=>$("preview").src=x.target.result;rd.readAsDataURL(f);
+ $("loader").style.display="block";$("apiStatus").innerHTML="";
+ try{
+  const fd=new FormData();fd.append("file",f);
+  const res=await fetch("/api/extract",{method:"POST",body:fd});const data=await res.json();
+  if(!res.ok)throw new Error(data.detail||data.error||"Extraction failed");
+  fill(data.record);
+  $("apiStatus").innerHTML=`<div class="status ${data.validation.status==="PASS"?"pass":"review"}"><b>Vision extraction: ${data.validation.status}</b> · panel: ${data.record.panel_type||"unresolved"} · species source: ${data.record.species_source||"unresolved"}</div>`;
+  const notes=[...(data.record.vision_notes||[]),...(data.record.review||[]).map(x=>x.message)].filter(Boolean);
+  $("notes").innerHTML=notes.length?`<pre>${notes.join("\\n")}</pre>`:"";
+ }catch(err){$("apiStatus").innerHTML=`<div class="status error"><b>Extraction error</b><br>${err.message}</div>`}
+ finally{$("loader").style.display="none"}
+};
+$("refreshCreature").onclick=refreshCreature;
+$("copy").onclick=async()=>{await navigator.clipboard.writeText(JSON.stringify(record,null,2));$("copy").textContent="Copied";setTimeout(()=>$("copy").textContent="Copy Record",800)};
+$("downloadRecord").onclick=()=>{const b=new Blob([JSON.stringify(record,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=`${(record.species||"dino").replace(/[^a-z0-9]+/gi,"_")}_record.json`;a.click();URL.revokeObjectURL(a.href)};
+$("generateCard").onclick=async()=>{
+ $("generateCard").disabled=true;$("generateCard").textContent="Generating…";
+ try{
+  const res=await fetch("/api/card",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(record)});
+  if(!res.ok){const e=await res.json();throw new Error(e.detail||e.error||"Card generation failed")}
+  if(currentCardUrl)URL.revokeObjectURL(currentCardUrl);
+  const blob=await res.blob();currentCardUrl=URL.createObjectURL(blob);$("cardImage").src=currentCardUrl;$("cardModal").style.display="flex";
+ }catch(err){alert(err.message)}
+ finally{$("generateCard").textContent="Generate Dino Card";syncAndValidate()}
+};
+$("downloadCard").onclick=()=>{if(!currentCardUrl)return;const a=document.createElement("a");a.href=currentCardUrl;a.download=`${(record.species||"dino").replace(/[^a-z0-9]+/gi,"_")}_THC_card.png`;a.click()};
+$("closeModal").onclick=()=>$("cardModal").style.display="none";
+setupEditors();
+</script>
+</body></html>

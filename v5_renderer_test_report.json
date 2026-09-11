@@ -1,0 +1,313 @@
+[
+  {
+    "species": "Autumn Drakeling",
+    "panel_type": "hud",
+    "validation": "PASS",
+    "genetic_level": 450,
+    "card": "PASS",
+    "card_file": "Autumn_Drakeling.png",
+    "regions": [
+      {
+        "region": 0,
+        "color_id": 79,
+        "color_name": "ActualBlack",
+        "rgb": [
+          1,
+          1,
+          1
+        ],
+        "visible_on_species": true
+      },
+      {
+        "region": 1,
+        "color_id": 79,
+        "color_name": "ActualBlack",
+        "rgb": [
+          1,
+          1,
+          1
+        ],
+        "visible_on_species": true
+      },
+      {
+        "region": 2,
+        "color_id": 79,
+        "color_name": "ActualBlack",
+        "rgb": [
+          1,
+          1,
+          1
+        ],
+        "visible_on_species": true
+      },
+      {
+        "region": 3,
+        "color_id": 1,
+        "color_name": "Red",
+        "rgb": [
+          255,
+          0,
+          0
+        ],
+        "visible_on_species": true
+      },
+      {
+        "region": 4,
+        "color_id": 1,
+        "color_name": "Red",
+        "rgb": [
+          255,
+          0,
+          0
+        ],
+        "visible_on_species": false
+      },
+      {
+        "region": 5,
+        "color_id": 79,
+        "color_name": "ActualBlack",
+        "rgb": [
+          1,
+          1,
+          1
+        ],
+        "visible_on_species": true
+      }
+    ]
+  },
+  {
+    "species": "Maeguana",
+    "panel_type": "hud",
+    "validation": "PASS",
+    "genetic_level": 362,
+    "card": "PASS",
+    "card_file": "Maeguana.png",
+    "regions": [
+      {
+        "region": 0,
+        "color_id": 36,
+        "color_name": "Dino Albino",
+        "rgb": [
+          255,
+          255,
+          255
+        ],
+        "visible_on_species": true
+      },
+      {
+        "region": 1,
+        "color_id": 36,
+        "color_name": "Dino Albino",
+        "rgb": [
+          255,
+          255,
+          255
+        ],
+        "visible_on_species": false
+      },
+      {
+        "region": 2,
+        "color_id": 36,
+        "color_name": "Dino Albino",
+        "rgb": [
+          255,
+          255,
+          255
+        ],
+        "visible_on_species": true
+      },
+      {
+        "region": 3,
+        "color_id": 36,
+        "color_name": "Dino Albino",
+        "rgb": [
+          255,
+          255,
+          255
+        ],
+        "visible_on_species": true
+      },
+      {
+        "region": 4,
+        "color_id": 36,
+        "color_name": "Dino Albino",
+        "rgb": [
+          255,
+          255,
+          255
+        ],
+        "visible_on_species": true
+      },
+      {
+        "region": 5,
+        "color_id": 6,
+        "color_name": "Magenta",
+        "rgb": [
+          255,
+          0,
+          255
+        ],
+        "visible_on_species": true
+      }
+    ]
+  },
+  {
+    "species": "Rock Drake",
+    "panel_type": "hud",
+    "validation": "PASS",
+    "genetic_level": 364,
+    "card": "PASS",
+    "card_file": "Rock_Drake.png",
+    "regions": [
+      {
+        "region": 0,
+        "color_id": 5,
+        "color_name": "Cyan",
+        "rgb": [
+          0,
+          255,
+          255
+        ],
+        "visible_on_species": true
+      },
+      {
+        "region": 1,
+        "color_id": 5,
+        "color_name": "Cyan",
+        "rgb": [
+          0,
+          255,
+          255
+        ],
+        "visible_on_species": true
+      },
+      {
+        "region": 2,
+        "color_id": 5,
+        "color_name": "Cyan",
+        "rgb": [
+          0,
+          255,
+          255
+        ],
+        "visible_on_species": true
+      },
+      {
+        "region": 3,
+        "color_id": 5,
+        "color_name": "Cyan",
+        "rgb": [
+          0,
+          255,
+          255
+        ],
+        "visible_on_species": true
+      },
+      {
+        "region": 4,
+        "color_id": 5,
+        "color_name": "Cyan",
+        "rgb": [
+          0,
+          255,
+          255
+        ],
+        "visible_on_species": true
+      },
+      {
+        "region": 5,
+        "color_id": 5,
+        "color_name": "Cyan",
+        "rgb": [
+          0,
+          255,
+          255
+        ],
+        "visible_on_species": true
+      }
+    ]
+  },
+  {
+    "species": "Pyromane",
+    "panel_type": "hud",
+    "validation": "PASS",
+    "genetic_level": 362,
+    "card": "PASS",
+    "card_file": "Pyromane.png",
+    "regions": [
+      {
+        "region": 0,
+        "color_id": 79,
+        "color_name": "ActualBlack",
+        "rgb": [
+          1,
+          1,
+          1
+        ],
+        "visible_on_species": false
+      },
+      {
+        "region": 1,
+        "color_id": 79,
+        "color_name": "ActualBlack",
+        "rgb": [
+          1,
+          1,
+          1
+        ],
+        "visible_on_species": false
+      },
+      {
+        "region": 2,
+        "color_id": 202,
+        "color_name": "Unknown",
+        "rgb": [
+          128,
+          128,
+          128
+        ],
+        "visible_on_species": true
+      },
+      {
+        "region": 3,
+        "color_id": 202,
+        "color_name": "Unknown",
+        "rgb": [
+          128,
+          128,
+          128
+        ],
+        "visible_on_species": true
+      },
+      {
+        "region": 4,
+        "color_id": 202,
+        "color_name": "Unknown",
+        "rgb": [
+          128,
+          128,
+          128
+        ],
+        "visible_on_species": false
+      },
+      {
+        "region": 5,
+        "color_id": 202,
+        "color_name": "Unknown",
+        "rgb": [
+          128,
+          128,
+          128
+        ],
+        "visible_on_species": true
+      }
+    ]
+  },
+  {
+    "species": "Rhyniognatha",
+    "panel_type": "cryopod",
+    "validation": "REVIEW",
+    "genetic_level": null,
+    "card": "BLOCKED_AS_EXPECTED"
+  }
+]

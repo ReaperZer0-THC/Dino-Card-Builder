@@ -1,0 +1,52 @@
+[
+  {
+    "sha256": "fada5d0a85dd1cb94bad1a20f04cc3b647e8a65c57c22ced5d3dd426acdbec8c",
+    "species": "Autumn Drakeling",
+    "panel_type": "hud",
+    "status": "PASS",
+    "genetic_level": null,
+    "card_ready": true,
+    "creature": "PASS",
+    "card": "PASS"
+  },
+  {
+    "sha256": "1dd1cd65a94f598083acc5f35cd237d5863c9ee60bbfc7bd996609bdf078530a",
+    "species": "Maeguana",
+    "panel_type": "hud",
+    "status": "PASS",
+    "genetic_level": null,
+    "card_ready": true,
+    "creature": "PASS",
+    "card": "PASS"
+  },
+  {
+    "sha256": "0a7a031b89a38877b194efeb4379bf2288527c66c2c2c17edfc761cceadba2ce",
+    "species": "Rock Drake",
+    "panel_type": "hud",
+    "status": "PASS",
+    "genetic_level": null,
+    "card_ready": true,
+    "creature": "PASS",
+    "card": "PASS"
+  },
+  {
+    "sha256": "57905f6aea73bc579391e86d731ff5bc45f91ad48b5db60af4debc2481c4f9df",
+    "species": "Pyromane",
+    "panel_type": "hud",
+    "status": "PASS",
+    "genetic_level": null,
+    "card_ready": true,
+    "creature": "PASS",
+    "card": "PASS"
+  },
+  {
+    "sha256": "9fa76addeefea935f10ccc2021ecb68afcbc6c9dde2bf0b01a8251980d75e875",
+    "species": "Rhyniognatha",
+    "panel_type": "cryopod",
+    "status": "REVIEW",
+    "genetic_level": null,
+    "card_ready": false,
+    "creature": "PASS",
+    "card": "BLOCKED_AS_EXPECTED"
+  }
+]
