@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>THC Dino Card Builder V5</title>
+<title>THC Dino Card Builder V6.2</title>
 <style>
 :root{--bg:#07100a;--panel:#111a14;--panel2:#0a120d;--line:#2d3d31;--gold:#d6b45f;--text:#eef2ed;--muted:#9da99f;--good:#83dda1;--warn:#efcf77;--bad:#ef8d84}
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#07100a,#111812);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
@@ -24,7 +24,7 @@ pre{white-space:pre-wrap;font-size:11px;background:#070d09;padding:10px;border-r
 </style>
 </head>
 <body>
-<header><div class="brand">THE HIGH COUNCIL · DINO CARD BUILDER V5</div><div class="sub">Screenshot → Vision → Review → Species Render → Finished Card</div></header>
+<header><div class="brand">THE HIGH COUNCIL · DINO CARD BUILDER V6.2</div><div class="sub">Screenshot → Vision → Review → Species Render → Finished Card</div></header>
 <main>
 <div class="steps">
 <div class="step"><b>1.</b> Upload</div><div class="step"><b>2.</b> Extract</div><div class="step"><b>3.</b> Review</div><div class="step"><b>4.</b> Render</div><div class="step"><b>5.</b> Card</div>
@@ -115,7 +115,8 @@ $("file").onchange=async e=>{
   const res=await fetch("/api/extract",{method:"POST",body:fd});const data=await res.json();
   if(!res.ok)throw new Error(data.detail||data.error||"Extraction failed");
   fill(data.record);
-  $("apiStatus").innerHTML=`<div class="status ${data.validation.status==="PASS"?"pass":"review"}"><b>Vision extraction: ${data.validation.status}</b> · panel: ${data.record.panel_type||"unresolved"} · species source: ${data.record.species_source||"unresolved"}</div>`;
+  const rid=data.request_id||"untracked";
+  $("apiStatus").innerHTML=`<div class="status ${data.validation.status==="PASS"?"pass":"review"}"><b>Vision extraction: ${data.validation.status}</b> · panel: ${data.record.panel_type||"unresolved"} · species source: ${data.record.species_source||"unresolved"}<br><span class="muted">Diagnostic request: <code>${rid}</code></span></div>`;
   const notes=[...(data.record.vision_notes||[]),...(data.record.review||[]).map(x=>x.message)].filter(Boolean);
   $("notes").innerHTML=notes.length?`<pre>${notes.join("\\n")}</pre>`:"";
  }catch(err){$("apiStatus").innerHTML=`<div class="status error"><b>Extraction error</b><br>${err.message}</div>`}

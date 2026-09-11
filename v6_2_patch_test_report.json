@@ -1,0 +1,21 @@
+{
+  "version": "6.2",
+  "tests": {
+    "python_compile": "PASS",
+    "rock_drake_fixture": {
+      "status": "PASS",
+      "species": "Rock Drake",
+      "genetic_level": 364,
+      "oxygen": [0, 0, 0],
+      "melee": [54, 158, 0]
+    },
+    "species_retry_immutability": {
+      "status": "PASS",
+      "result": "Focused species retry preserved stats, colors, sex, and shown level."
+    },
+    "diagnostic_privacy": {
+      "status": "PASS",
+      "result": "Diagnostic snapshot excludes image bytes, API credentials, and cryopod free-text display values."
+    }
+  }
+}

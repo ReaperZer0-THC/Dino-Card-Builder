@@ -4,6 +4,9 @@ from __future__ import annotations
 from pathlib import Path
 import json
 import os
+import hashlib
+import logging
+import uuid
 
 from fastapi import FastAPI, File, UploadFile, Body
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,7 +31,10 @@ else:
 
 adapter = VisionAdapter(provider, valid_species_names=species_names())
 
-app = FastAPI(title="THC Dino Card Builder", version="6.1")
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
+logger = logging.getLogger("thc.server")
+
+app = FastAPI(title="THC Dino Card Builder", version="6.2")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -39,7 +45,7 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health():
-    return {"ok":True,"provider":provider_name,"model":getattr(provider,"model",None),"version":"6.1"}
+    return {"ok":True,"provider":provider_name,"model":getattr(provider,"model",None),"version":"6.2"}
 
 @app.post("/api/extract")
 async def extract(file: UploadFile = File(...)):
@@ -50,10 +56,33 @@ async def extract(file: UploadFile = File(...)):
         return JSONResponse({"error":"Image is too large.","max_bytes":MAX_UPLOAD_BYTES},status_code=413)
     if not (file.content_type or "").startswith("image/"):
         return JSONResponse({"error":"Upload an image file."},status_code=415)
+    request_id = uuid.uuid4().hex[:12]
+    image_fingerprint = hashlib.sha256(data).hexdigest()[:12]
+    logger.info("VISION_DIAG %s", json.dumps({
+        "request_id": request_id,
+        "stage": "request_start",
+        "image_sha256_12": image_fingerprint,
+        "mime_type": file.content_type or "image/png",
+        "bytes": len(data),
+        "provider": provider_name,
+        "model": getattr(provider, "model", None),
+    }, separators=(",", ":"), sort_keys=True))
     try:
-        return adapter.extract(data,file.content_type or "image/png")
+        result = adapter.extract(data, file.content_type or "image/png", request_id=request_id)
+        logger.info("VISION_DIAG %s", json.dumps({
+            "request_id": request_id,
+            "stage": "request_complete",
+            "status": (result.get("validation") or {}).get("status"),
+            "species": (result.get("record") or {}).get("species"),
+        }, separators=(",", ":"), sort_keys=True))
+        return result
     except Exception as exc:
-        return JSONResponse({"error":"Vision extraction failed.","detail":str(exc)},status_code=500)
+        logger.exception("VISION_DIAG request_id=%s stage=request_error", request_id)
+        return JSONResponse({
+            "error":"Vision extraction failed.",
+            "detail":str(exc),
+            "request_id": request_id,
+        },status_code=500)
 
 @app.post("/api/creature")
 def creature(record: dict = Body(...)):

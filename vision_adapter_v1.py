@@ -22,6 +22,9 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Protocol, Iterable
 import json
 import re
+import logging
+
+logger = logging.getLogger("thc.vision")
 
 CARD_STATS = ("health", "stamina", "oxygen", "food", "weight", "melee")
 REGIONS = tuple(range(6))
@@ -416,6 +419,40 @@ def validate_record(record: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _diagnostic_snapshot(raw: Dict[str, Any]) -> Dict[str, Any]:
+    """Return a log-safe subset of a raw extraction."""
+    raw = raw or {}
+    stats = {}
+    for stat in CARD_STATS:
+        row = (raw.get("stats") or {}).get(stat) or {}
+        stats[stat] = {
+            "wild": row.get("wild"),
+            "mutations": row.get("mutations"),
+            "added": row.get("added"),
+            "applicable": row.get("applicable"),
+        }
+    colors = {}
+    for region in REGIONS:
+        row = (raw.get("colors") or {}).get(str(region), {}) or {}
+        colors[str(region)] = row.get("color_id")
+    return {
+        "panel_type": raw.get("panel_type"),
+        "displayed_name": raw.get("displayed_name"),
+        "visual_species": raw.get("visual_species"),
+        "sex": raw.get("sex"),
+        "shown_level": raw.get("shown_level"),
+        "stats": stats,
+        "colors": colors,
+        "confidence_notes": list(raw.get("confidence_notes") or []),
+    }
+
+
+def _breeding_data_changed(before: Dict[str, Any], after: Dict[str, Any]) -> bool:
+    """True only if a species retry changed non-species breeding data."""
+    keys = ("panel_type", "sex", "shown_level", "stats", "colors")
+    return any(before.get(k) != after.get(k) for k in keys)
+
+
 @dataclass
 class VisionAdapter:
     provider: VisionProvider
@@ -427,7 +464,14 @@ class VisionAdapter:
             return ""
         return "\n\nKNOWN ASA SPECIES (use as a closed-set reference when visually appropriate):\n" + " | ".join(names)
 
-    def extract(self, image_bytes: bytes, mime_type: str = "image/png") -> Dict[str, Any]:
+    def extract(self, image_bytes: bytes, mime_type: str = "image/png", request_id: Optional[str] = None) -> Dict[str, Any]:
+        """Run extraction while emitting safe, structured diagnostics.
+
+        Diagnostic logs intentionally exclude image bytes, API credentials, and
+        cryopod free-text values. They include only the fields needed to diagnose
+        extraction/species-resolution behavior.
+        """
+        rid = request_id or "untracked"
         species_context = self._species_context()
         raw = self.provider.infer(
             image_bytes=image_bytes,
@@ -435,11 +479,26 @@ class VisionAdapter:
             instructions=VISION_INSTRUCTIONS + species_context,
             schema=EXTRACTION_SCHEMA,
         )
+
+        pass1_snapshot = _diagnostic_snapshot(raw)
+        logger.info("VISION_DIAG %s", json.dumps({
+            "request_id": rid,
+            "stage": "pass1_raw",
+            **pass1_snapshot,
+        }, separators=(",", ":"), sort_keys=True))
+
         record = normalize_extraction(raw, self.valid_species_names)
+        logger.info("VISION_DIAG %s", json.dumps({
+            "request_id": rid,
+            "stage": "pass1_resolution",
+            "species": record.get("species"),
+            "species_source": record.get("species_source"),
+            "species_confidence": record.get("species_confidence"),
+        }, separators=(",", ":"), sort_keys=True))
 
         # If the general extraction could not resolve species, perform one focused
-        # visual-classification retry. This is intentionally narrow: it does not
-        # overwrite stats, colors, sex, or level from the first extraction.
+        # visual-classification retry. This retry is species-only: it is not given
+        # a schema capable of changing stats, colors, sex, or level.
         species_retry = None
         if record.get("species") is None:
             species_retry = self.provider.infer(
@@ -448,12 +507,19 @@ class VisionAdapter:
                 instructions=SPECIES_RETRY_INSTRUCTIONS + species_context,
                 schema=SPECIES_RETRY_SCHEMA,
             )
+            logger.info("VISION_DIAG %s", json.dumps({
+                "request_id": rid,
+                "stage": "species_retry_raw",
+                "displayed_name": (species_retry or {}).get("displayed_name"),
+                "visual_species": (species_retry or {}).get("visual_species"),
+                "reason": (species_retry or {}).get("reason"),
+            }, separators=(",", ":"), sort_keys=True))
+
             retry_visual = (species_retry or {}).get("visual_species")
             retry_displayed = (species_retry or {}).get("displayed_name")
             if retry_visual:
+                # Only these two identity fields may be updated by the retry.
                 raw["visual_species"] = retry_visual
-                # Correct a likely tribe/owner misread only when the focused pass
-                # can identify the actual creature-title line.
                 if retry_displayed:
                     raw["displayed_name"] = retry_displayed
                 raw.setdefault("confidence_notes", []).append(
@@ -461,8 +527,29 @@ class VisionAdapter:
                 )
                 record = normalize_extraction(raw, self.valid_species_names)
 
+            # Prove in the log that the focused retry did not alter breeding data.
+            pass2_snapshot = _diagnostic_snapshot(raw)
+            logger.info("VISION_DIAG %s", json.dumps({
+                "request_id": rid,
+                "stage": "species_retry_merge",
+                "species": record.get("species"),
+                "species_source": record.get("species_source"),
+                "breeding_data_changed": _breeding_data_changed(pass1_snapshot, pass2_snapshot),
+            }, separators=(",", ":"), sort_keys=True))
+
         validation = validate_record(record)
+        logger.info("VISION_DIAG %s", json.dumps({
+            "request_id": rid,
+            "stage": "validation",
+            "status": validation.get("status"),
+            "calculated_genetic_level": validation.get("calculated_genetic_level"),
+            "shown_level": record.get("shown_level"),
+            "species": record.get("species"),
+            "issue_fields": [i.get("field") for i in validation.get("issues", [])],
+        }, separators=(",", ":"), sort_keys=True))
+
         result = {
+            "request_id": rid,
             "record": record,
             "validation": validation,
             "raw_extraction": raw,

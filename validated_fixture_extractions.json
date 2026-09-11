@@ -169,8 +169,8 @@
         "applicable": true
       },
       "oxygen": {
-        "wild": 54,
-        "mutations": 158,
+        "wild": 0,
+        "mutations": 0,
         "added": 0,
         "applicable": true
       },
@@ -187,8 +187,8 @@
         "applicable": true
       },
       "melee": {
-        "wild": 0,
-        "mutations": 0,
+        "wild": 54,
+        "mutations": 158,
         "added": 0,
         "applicable": true
       }
@@ -221,7 +221,8 @@
     },
     "cryopod_display_values": {},
     "confidence_notes": [
-      "Validated development fixture."
+      "Validated development fixture.",
+      "Rock Drake stat mapping corrected: Oxygen 0|0|0; Melee 54|158|0."
     ]
   },
   "57905f6aea73bc579391e86d731ff5bc45f91ad48b5db60af4debc2481c4f9df": {
