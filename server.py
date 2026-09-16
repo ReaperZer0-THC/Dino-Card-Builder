@@ -34,7 +34,7 @@ adapter = VisionAdapter(provider, valid_species_names=species_names())
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
 logger = logging.getLogger("thc.server")
 
-app = FastAPI(title="THC Dino Card Builder", version="6.2")
+app = FastAPI(title="THC Dino Card Builder", version="6.3")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -45,7 +45,7 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health():
-    return {"ok":True,"provider":provider_name,"model":getattr(provider,"model",None),"version":"6.2"}
+    return {"ok":True,"provider":provider_name,"model":getattr(provider,"model",None),"version":"6.3"}
 
 @app.post("/api/extract")
 async def extract(file: UploadFile = File(...)):
@@ -87,7 +87,10 @@ async def extract(file: UploadFile = File(...)):
 @app.post("/api/creature")
 def creature(record: dict = Body(...)):
     validation=validate_record(record)
-    # Creature preview only needs identity + colors; do not require full card readiness.
+    # V6.3: never render an unverified/review record. Wrong artwork can make an
+    # uncertain species classification look authoritative.
+    if not validation["card_generation_allowed"]:
+        return JSONResponse({"error":"Species/data verification required before creature rendering.","validation":validation},status_code=422)
     try:
         png=render_creature_png(record)
         return Response(png,media_type="image/png")

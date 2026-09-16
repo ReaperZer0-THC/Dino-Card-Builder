@@ -24,7 +24,7 @@ pre{white-space:pre-wrap;font-size:11px;background:#070d09;padding:10px;border-r
 </style>
 </head>
 <body>
-<header><div class="brand">THE HIGH COUNCIL · DINO CARD BUILDER V6.2</div><div class="sub">Screenshot → Vision → Review → Species Render → Finished Card</div></header>
+<header><div class="brand">THE HIGH COUNCIL · DINO CARD BUILDER V6.3</div><div class="sub">Screenshot → Vision → Review → Species Render → Finished Card</div></header>
 <main>
 <div class="steps">
 <div class="step"><b>1.</b> Upload</div><div class="step"><b>2.</b> Extract</div><div class="step"><b>3.</b> Review</div><div class="step"><b>4.</b> Render</div><div class="step"><b>5.</b> Card</div>
@@ -81,7 +81,7 @@ function fill(rec){
  $("species").value=record.species||"";$("sex").value=record.sex||"";$("level").value=record.shown_level??"";$("displayedName").value=record.displayed_name||"";
  STATS.forEach(s=>{const r=record.stats?.[s]||blankRow();const row=$("row-"+s);row.classList.toggle("na",r.applicable===false);["wild","mutations","added"].forEach(k=>{const e=document.querySelector(`[data-s="${s}"][data-k="${k}"]`);e.disabled=r.applicable===false;e.value=r[k]??""})});
  [0,1,2,3,4,5].forEach(i=>document.querySelector(`[data-region="${i}"]`).value=record.colors?.[String(i)]?.color_id??"");
- syncAndValidate(); refreshCreature();
+ syncAndValidate();
 }
 function valueNum(el){return el.value===""?null:Number(el.value)}
 function syncAndValidate(){
@@ -117,7 +117,16 @@ $("file").onchange=async e=>{
   fill(data.record);
   const rid=data.request_id||"untracked";
   $("apiStatus").innerHTML=`<div class="status ${data.validation.status==="PASS"?"pass":"review"}"><b>Vision extraction: ${data.validation.status}</b> · panel: ${data.record.panel_type||"unresolved"} · species source: ${data.record.species_source||"unresolved"}<br><span class="muted">Diagnostic request: <code>${rid}</code></span></div>`;
-  const notes=[...(data.record.vision_notes||[]),...(data.record.review||[]).map(x=>x.message)].filter(Boolean);
+  if(data.validation.status==="PASS") await refreshCreature();
+  else {
+    if(creatureUrl){URL.revokeObjectURL(creatureUrl);creatureUrl=null}
+    $("creaturePreview").removeAttribute("src");$("creaturePlaceholder").style.display="inline";
+    $("creaturePlaceholder").textContent="Species verification required before rendering.";
+  }
+  const tops=data.diagnostics?.species_top||[];
+  const candidateNote=(!data.diagnostics?.species_consensus&&tops.length)?`Species classifiers disagreed: ${tops.map(x=>x||"unresolved").join(" vs ")}.`:null;
+  const retryNote=data.diagnostics?.data_retry_used?"Stat extraction was automatically retried and the level-validated result was selected.":null;
+  const notes=[candidateNote,retryNote,...(data.record.vision_notes||[]),...(data.record.review||[]).map(x=>x.message)].filter(Boolean);
   $("notes").innerHTML=notes.length?`<pre>${notes.join("\\n")}</pre>`:"";
  }catch(err){$("apiStatus").innerHTML=`<div class="status error"><b>Extraction error</b><br>${err.message}</div>`}
  finally{$("loader").style.display="none"}

@@ -141,33 +141,83 @@ EXTRACTION_SCHEMA: Dict[str, Any] = {
 }
 
 
-SPECIES_RETRY_SCHEMA: Dict[str, Any] = {
+
+# V6.3 separates HUD/data extraction from species classification.  The data
+# schema has no species fields, and the species schema has no breeding fields.
+# This makes it impossible for a species retry to overwrite stats/colors.
+DATA_EXTRACTION_SCHEMA: Dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
-    "required": ["displayed_name", "visual_species", "reason"],
+    "required": ["panel_type", "sex", "shown_level", "stats", "colors",
+                 "cryopod_display_values", "confidence_notes"],
     "properties": {
-        "displayed_name": {"type": ["string", "null"]},
-        "visual_species": {"type": ["string", "null"]},
-        "reason": {"type": "string"},
+        "panel_type": {"type": ["string", "null"], "enum": ["hud", "cryopod", None]},
+        "sex": {"type": ["string", "null"], "enum": ["female", "male", None]},
+        "shown_level": {"type": ["integer", "null"]},
+        "stats": EXTRACTION_SCHEMA["properties"]["stats"],
+        "colors": EXTRACTION_SCHEMA["properties"]["colors"],
+        "cryopod_display_values": EXTRACTION_SCHEMA["properties"]["cryopod_display_values"],
+        "confidence_notes": EXTRACTION_SCHEMA["properties"]["confidence_notes"],
     },
 }
 
-SPECIES_RETRY_INSTRUCTIONS = """
-Re-examine this ARK: Survival Ascended screenshot for SPECIES IDENTIFICATION ONLY.
+DATA_EXTRACTION_INSTRUCTIONS = """
+Read breeding DATA ONLY from this ARK: Survival Ascended Xbox screenshot.
+Do not identify or guess the creature species and do not use creature morphology.
 
-Do not extract stats or colors. Focus on the creature body silhouette, head, limbs,
-wing/feather/scale structure, tail, and any creature portrait/icon in the HUD.
+LOCKED RULES
+- Ignore tribe/owner/player/imprinter text.
+- Determine panel_type: hud or cryopod.
+- Read sex and shown creature level when visible.
+- HUD breeding stats are exactly health, stamina, oxygen, food, weight, melee.
+- Preserve every explicit zero. Missing/unreadable is null, never zero.
+- For HUD triplets: first=wild, second=mutations, third=added.
+- Exclude Torpor and Movement from breeding stats.
+- Keep all six Color IDs, Regions 0-5.
+- Ignore maternal/paternal aggregate mutation counters.
+- Cryopod current/max values are NOT breeding points; leave breeding triplets null.
+- Do not guess values merely to make the level arithmetic match.
+Return only the requested schema.
+"""
+
+SPECIES_CANDIDATE_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["displayed_name", "candidates", "notes"],
+    "properties": {
+        "displayed_name": {"type": ["string", "null"]},
+        "candidates": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["species", "confidence", "evidence"],
+                "properties": {
+                    "species": {"type": ["string", "null"]},
+                    "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
+                    "evidence": {"type": "string"},
+                },
+            },
+        },
+        "notes": {"type": "array", "items": {"type": "string"}},
+    },
+}
+
+SPECIES_CLASSIFICATION_INSTRUCTIONS = """
+Identify the biological ARK: Survival Ascended SPECIES ONLY.
+Do not read or return breeding stats, colors, sex, or level.
 
 Rules:
-- Ignore tribe, owner, player, imprinter, and world text completely.
-- displayed_name is only the creature name/title line. If that line cannot be
-  distinguished from tribe/owner text, return displayed_name=null.
-- visual_species must be the biological ARK species identified from the creature
-  body or creature icon, not a custom creature name.
-- Renamed creatures are common. A custom name does not make species unknown.
-- If text and visual conflict, visual wins.
-- Choose from the supplied known ASA species list when a confident visual match exists.
-- Return null only when the creature/icon truly cannot be visually classified.
+- Read displayed_name only from the creature title/name line.
+- Ignore tribe, owner, player, imprinter, and nearby world text completely.
+- Renamed creatures are common; a custom displayed name is not a species.
+- Classify from the creature body morphology and/or the creature portrait/icon.
+- Return exactly three ranked candidate species, best match first.
+- Use the supplied known ASA species list as a closed-set reference when appropriate.
+- Evidence must describe visible morphology/icon cues, not hidden assumptions.
+- Do not inflate confidence. If visual evidence is ambiguous, say medium/low.
 """
 
 
@@ -462,89 +512,150 @@ class VisionAdapter:
         names = list(self.valid_species_names or [])
         if not names:
             return ""
-        return "\n\nKNOWN ASA SPECIES (use as a closed-set reference when visually appropriate):\n" + " | ".join(names)
+        return "\n\nKNOWN ASA SPECIES (closed-set reference):\n" + " | ".join(names)
 
-    def extract(self, image_bytes: bytes, mime_type: str = "image/png", request_id: Optional[str] = None) -> Dict[str, Any]:
-        """Run extraction while emitting safe, structured diagnostics.
+    def _canonical_species(self, value: Optional[str]) -> Optional[str]:
+        if not value:
+            return None
+        names = list(self.valid_species_names or [])
+        if not names:
+            return value.strip()
+        m = {_species_key(x): x for x in names}
+        return m.get(_species_key(value))
 
-        Diagnostic logs intentionally exclude image bytes, API credentials, and
-        cryopod free-text values. They include only the fields needed to diagnose
-        extraction/species-resolution behavior.
-        """
-        rid = request_id or "untracked"
-        species_context = self._species_context()
-        raw = self.provider.infer(
+    @staticmethod
+    def _raw_level(raw: Dict[str, Any]) -> Optional[int]:
+        if (raw or {}).get("panel_type") != "hud":
+            return None
+        total = 1
+        for stat in CARD_STATS:
+            row = ((raw or {}).get("stats") or {}).get(stat) or {}
+            if row.get("applicable") is False:
+                continue
+            if not isinstance(row.get("wild"), int) or not isinstance(row.get("mutations"), int):
+                return None
+            total += row["wild"] + row["mutations"]
+        return total
+
+    @staticmethod
+    def _data_snapshot(raw: Dict[str, Any]) -> Dict[str, Any]:
+        snap = _diagnostic_snapshot({**(raw or {}), "displayed_name": None, "visual_species": None})
+        snap.pop("displayed_name", None)
+        snap.pop("visual_species", None)
+        return snap
+
+    def _run_data(self, image_bytes: bytes, mime_type: str) -> Dict[str, Any]:
+        return self.provider.infer(
             image_bytes=image_bytes,
             mime_type=mime_type,
-            instructions=VISION_INSTRUCTIONS + species_context,
-            schema=EXTRACTION_SCHEMA,
+            instructions=DATA_EXTRACTION_INSTRUCTIONS,
+            schema=DATA_EXTRACTION_SCHEMA,
         )
 
-        pass1_snapshot = _diagnostic_snapshot(raw)
+    def _run_species(self, image_bytes: bytes, mime_type: str) -> Dict[str, Any]:
+        return self.provider.infer(
+            image_bytes=image_bytes,
+            mime_type=mime_type,
+            instructions=SPECIES_CLASSIFICATION_INSTRUCTIONS + self._species_context(),
+            schema=SPECIES_CANDIDATE_SCHEMA,
+        )
+
+    def extract(self, image_bytes: bytes, mime_type: str = "image/png", request_id: Optional[str] = None) -> Dict[str, Any]:
+        rid = request_id or "untracked"
+
+        # PASS A: breeding data only. Species is not present in this schema.
+        data1 = self._run_data(image_bytes, mime_type)
+        calc1 = self._raw_level(data1)
+        shown1 = data1.get("shown_level")
         logger.info("VISION_DIAG %s", json.dumps({
-            "request_id": rid,
-            "stage": "pass1_raw",
-            **pass1_snapshot,
+            "request_id": rid, "stage": "data_pass1",
+            **self._data_snapshot(data1), "calculated_genetic_level": calc1,
         }, separators=(",", ":"), sort_keys=True))
 
-        record = normalize_extraction(raw, self.valid_species_names)
+        selected_data = data1
+        data_retry = None
+        data_retry_reason = None
+        # Genetic level is an objective checksum for HUD screenshots. Retry the
+        # data pass when missing fields or a mismatch proves the first read is bad.
+        if data1.get("panel_type") == "hud" and isinstance(shown1, int) and calc1 != shown1:
+            data_retry_reason = "genetic_level_mismatch_or_incomplete"
+            data_retry = self._run_data(image_bytes, mime_type)
+            calc2 = self._raw_level(data_retry)
+            shown2 = data_retry.get("shown_level")
+            logger.info("VISION_DIAG %s", json.dumps({
+                "request_id": rid, "stage": "data_retry",
+                **self._data_snapshot(data_retry), "calculated_genetic_level": calc2,
+                "retry_reason": data_retry_reason,
+            }, separators=(",", ":"), sort_keys=True))
+            # Prefer a pass that independently satisfies the displayed-level checksum.
+            if isinstance(shown2, int) and calc2 == shown2:
+                selected_data = data_retry
+            logger.info("VISION_DIAG %s", json.dumps({
+                "request_id": rid, "stage": "data_selection",
+                "selected": "retry" if selected_data is data_retry else "pass1",
+                "pass1_level": calc1, "retry_level": calc2,
+                "shown_level": (selected_data or {}).get("shown_level"),
+            }, separators=(",", ":"), sort_keys=True))
+
+        # PASS B: two isolated species classifications. These schemas contain no
+        # breeding fields, so species work cannot mutate the selected data pass.
+        sp1 = self._run_species(image_bytes, mime_type)
+        sp2 = self._run_species(image_bytes, mime_type)
+
+        def top(sp):
+            arr = (sp or {}).get("candidates") or []
+            return self._canonical_species((arr[0] or {}).get("species")) if arr else None
+
+        top1, top2 = top(sp1), top(sp2)
         logger.info("VISION_DIAG %s", json.dumps({
-            "request_id": rid,
-            "stage": "pass1_resolution",
-            "species": record.get("species"),
-            "species_source": record.get("species_source"),
-            "species_confidence": record.get("species_confidence"),
+            "request_id": rid, "stage": "species_pass1",
+            "displayed_name": sp1.get("displayed_name"), "candidates": sp1.get("candidates"),
+        }, separators=(",", ":"), sort_keys=True))
+        logger.info("VISION_DIAG %s", json.dumps({
+            "request_id": rid, "stage": "species_pass2",
+            "displayed_name": sp2.get("displayed_name"), "candidates": sp2.get("candidates"),
         }, separators=(",", ":"), sort_keys=True))
 
-        # If the general extraction could not resolve species, perform one focused
-        # visual-classification retry. This retry is species-only: it is not given
-        # a schema capable of changing stats, colors, sex, or level.
-        species_retry = None
-        if record.get("species") is None:
-            species_retry = self.provider.infer(
-                image_bytes=image_bytes,
-                mime_type=mime_type,
-                instructions=SPECIES_RETRY_INSTRUCTIONS + species_context,
-                schema=SPECIES_RETRY_SCHEMA,
-            )
-            logger.info("VISION_DIAG %s", json.dumps({
-                "request_id": rid,
-                "stage": "species_retry_raw",
-                "displayed_name": (species_retry or {}).get("displayed_name"),
-                "visual_species": (species_retry or {}).get("visual_species"),
-                "reason": (species_retry or {}).get("reason"),
-            }, separators=(",", ":"), sort_keys=True))
+        species = top1 if top1 and top1 == top2 else None
+        displayed_name = sp1.get("displayed_name") or sp2.get("displayed_name")
+        consensus = bool(species)
+        logger.info("VISION_DIAG %s", json.dumps({
+            "request_id": rid, "stage": "species_consensus",
+            "top1": top1, "top2": top2, "accepted_species": species,
+            "consensus": consensus,
+        }, separators=(",", ":"), sort_keys=True))
 
-            retry_visual = (species_retry or {}).get("visual_species")
-            retry_displayed = (species_retry or {}).get("displayed_name")
-            if retry_visual:
-                # Only these two identity fields may be updated by the retry.
-                raw["visual_species"] = retry_visual
-                if retry_displayed:
-                    raw["displayed_name"] = retry_displayed
-                raw.setdefault("confidence_notes", []).append(
-                    "Species resolved by focused visual retry: " + str((species_retry or {}).get("reason") or "visual classification")
-                )
-                record = normalize_extraction(raw, self.valid_species_names)
-
-            # Prove in the log that the focused retry did not alter breeding data.
-            pass2_snapshot = _diagnostic_snapshot(raw)
-            logger.info("VISION_DIAG %s", json.dumps({
-                "request_id": rid,
-                "stage": "species_retry_merge",
-                "species": record.get("species"),
-                "species_source": record.get("species_source"),
-                "breeding_data_changed": _breeding_data_changed(pass1_snapshot, pass2_snapshot),
-            }, separators=(",", ":"), sort_keys=True))
+        # Recombine only after both independent jobs finish.
+        combined = json.loads(json.dumps(selected_data))
+        combined["displayed_name"] = displayed_name
+        combined["visual_species"] = species
+        record = normalize_extraction(combined, self.valid_species_names)
+        if species:
+            record["species"] = species
+            record["species_source"] = "visual_consensus"
+            record["species_confidence"] = "verified"
+        else:
+            record["species"] = None
+            record["species_source"] = "visual_disagreement"
+            record["species_confidence"] = "review"
+            record.setdefault("review", []).append({
+                "field": "species",
+                "reason": "classifier_disagreement",
+                "message": "Species classifiers disagreed; verify the species before rendering.",
+            })
+        record["species_candidates"] = {
+            "pass1": sp1.get("candidates") or [],
+            "pass2": sp2.get("candidates") or [],
+        }
+        record["vision_notes"] = list(selected_data.get("confidence_notes") or [])
 
         validation = validate_record(record)
         logger.info("VISION_DIAG %s", json.dumps({
-            "request_id": rid,
-            "stage": "validation",
+            "request_id": rid, "stage": "validation",
             "status": validation.get("status"),
             "calculated_genetic_level": validation.get("calculated_genetic_level"),
-            "shown_level": record.get("shown_level"),
-            "species": record.get("species"),
+            "shown_level": record.get("shown_level"), "species": record.get("species"),
+            "species_source": record.get("species_source"),
             "issue_fields": [i.get("field") for i in validation.get("issues", [])],
         }, separators=(",", ":"), sort_keys=True))
 
@@ -552,10 +663,13 @@ class VisionAdapter:
             "request_id": rid,
             "record": record,
             "validation": validation,
-            "raw_extraction": raw,
+            "diagnostics": {
+                "data_retry_used": selected_data is data_retry,
+                "data_retry_reason": data_retry_reason,
+                "species_consensus": consensus,
+                "species_top": [top1, top2],
+            },
         }
-        if species_retry is not None:
-            result["species_retry"] = species_retry
         return result
 
 
@@ -574,23 +688,41 @@ class FixtureVisionProvider:
               schema: Dict[str, Any]) -> Dict[str, Any]:
         import hashlib
         digest = hashlib.sha256(image_bytes).hexdigest()
-        if digest not in self.fixtures_by_sha256:
+        fixture = self.fixtures_by_sha256.get(digest)
+
+        # Species-only contract. Development fixtures deterministically expose
+        # their validated visual species as the top candidate.
+        if "candidates" in (schema.get("properties") or {}):
+            species = (fixture or {}).get("visual_species") if fixture else None
+            displayed = (fixture or {}).get("displayed_name") if fixture else None
             return {
-                "panel_type": None,
-                "displayed_name": None,
-                "visual_species": None,
-                "sex": None,
-                "shown_level": None,
-                "stats": {
-                    stat: {
-                        "wild": None, "mutations": None, "added": None,
-                        "applicable": True
-                    } for stat in CARD_STATS
-                },
-                "colors": {str(i): {"color_id": None} for i in REGIONS},
-                "cryopod_display_values": {},
-                "confidence_notes": [
-                    "Unknown image: no development fixture matched. No values guessed."
+                "displayed_name": displayed,
+                "candidates": [
+                    {"species": species, "confidence": "high" if species else "low", "evidence": "validated development fixture" if species else "unknown image"},
+                    {"species": None, "confidence": "low", "evidence": "no second fixture candidate"},
+                    {"species": None, "confidence": "low", "evidence": "no third fixture candidate"},
                 ],
+                "notes": ["Development fixture species classification."],
             }
-        return json.loads(json.dumps(self.fixtures_by_sha256[digest]))
+
+        if not fixture:
+            return {
+                "panel_type": None, "sex": None, "shown_level": None,
+                "stats": {stat: {"wild": None, "mutations": None, "added": None, "applicable": True} for stat in CARD_STATS},
+                "colors": {str(i): {"color_id": None} for i in REGIONS},
+                "cryopod_display_values": {k: None for k in ("health","stamina","weight","melee","oxygen","food","movement","imprint","torpor")},
+                "confidence_notes": ["Unknown image: no development fixture matched. No values guessed."],
+            }
+
+        # Data-only contract: deliberately strip species/name fields.
+        f = json.loads(json.dumps(fixture))
+        return {
+            "panel_type": f.get("panel_type"),
+            "sex": f.get("sex"),
+            "shown_level": f.get("shown_level"),
+            "stats": f.get("stats") or {},
+            "colors": f.get("colors") or {},
+            "cryopod_display_values": f.get("cryopod_display_values") or {k: None for k in ("health","stamina","weight","melee","oxygen","food","movement","imprint","torpor")},
+            "confidence_notes": f.get("confidence_notes") or [],
+        }
+

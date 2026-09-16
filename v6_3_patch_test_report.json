@@ -1,0 +1,12 @@
+{
+  "version": "6.3",
+  "tests": {
+    "level_mismatch_triggers_data_only_retry": "PASS",
+    "retry_restores_melee_54_158_0": "PASS",
+    "genetic_level_364": "PASS",
+    "two_species_passes_agree_rock_drake": "PASS",
+    "species_disagreement_forces_review": "PASS",
+    "species_contract_has_no_stat_fields": "PASS",
+    "data_contract_has_no_species_field": "PASS"
+  }
+}
